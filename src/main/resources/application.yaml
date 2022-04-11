@@ -1,0 +1,40 @@
+server:
+  port: 8080
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    properties:
+      hibernate:
+        format_sql: true
+  datasource:
+    url: jdbc:mariadb://localhost:3306/{dbname}?useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: root
+    password: 1234
+logging:
+  level:
+    org:
+      springframework:
+        web:
+          client: DEBUG
+
+# aws s3
+cloud:
+  aws:
+    stack:
+      auto: false
+    region:
+      static: ap-northeast-2
+    credentials:
+      access-key: AKIAUM7BRPEP7ENCOAJB
+      secret-key: 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
+    s3:
+      bucket: {bucket-name}
+
+fcm:
+  key:
+    path : {key-path}
