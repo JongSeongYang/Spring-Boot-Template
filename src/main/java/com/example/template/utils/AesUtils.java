@@ -32,7 +32,7 @@ public class AesUtils {
      */
 
     @SneakyThrows
-    public static String encrypt(String str) {
+    public String encrypt(String str) {
         if(ObjectUtils.isEmpty(str)) {
             return "";
         }
@@ -46,7 +46,7 @@ public class AesUtils {
     }
 
     @SneakyThrows
-    public static String decrypt(String str) {
+    public String decrypt(String str) {
         if(ObjectUtils.isEmpty(str)) {
             return null;
         }

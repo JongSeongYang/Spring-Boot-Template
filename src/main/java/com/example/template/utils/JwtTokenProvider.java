@@ -1,10 +1,13 @@
 package com.example.template.utils;
 
 import io.jsonwebtoken.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.spec.SecretKeySpec;
+import javax.servlet.http.HttpServletRequest;
 import javax.xml.bind.DatatypeConverter;
 import java.security.Key;
 import java.util.Date;
@@ -12,45 +15,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
+@Slf4j
 public class JwtTokenProvider {
 
-    public final static String secretKeyMaster = "F12GViFbqBay6Cnx/fWIBAYFv/vGZWUmz7aiBCuP8IVKEO9J4oX5V1yfbgKCbVDw4lKdIRz7llprMlEVJ/0IY8nYKUpCORXeBPF3Vaodn/4A73yk44hMUw0PU8tbdZgVG7kVp4sFowkESxW1n0+yThawORZRmuPkxDXPttyvCMxo3guoMH1MsWElIxdC7tKvz1Nx6dHpVBiboZ0bm0rVlrwU8oP5GacXvrSqb58eYdaP20c5WNOqVfSTNIiITHhBJ8JnhG5LpmmU4o7R4uyNDyEzfoGQe5jN/c9pvW+BnjtoFY7/IpWlsIYXkE+MEh421GWzBnIl2qYoOJiY5kFy";
+    @Value("${jwt.key}")
+    private String secretKeyMaster;
+    private SignatureAlgorithm SIGNATURE_ALG = SignatureAlgorithm.HS256;
+    private static final String AUTHORIZATION = "Authorization";
+    private static final String AUTHORIZATION_TYPE = "Bearer";
 
-    public String createRegisterToken(Long memberId, String name, String email) {
+    public String createToken(Long memberId, String type, String email, Integer expire) {
 
-        SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
-        String key = secretKeyMaster;
-        //String role = "";
-
-        byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary(key);
-        Key signingKey = new SecretKeySpec(apiKeySecretBytes, signatureAlgorithm.getJcaName());
-
-        Map<String, Object> headerMap = new HashMap<>();
-
-        headerMap.put("typ", "JWT");
-        headerMap.put("alg", "HS256");
-
-        Map<String, String> map = new HashMap<>();
-        map.put("id", String.valueOf(memberId));
-        map.put("name", name);
-        map.put("email", email);
-
-        JwtBuilder builder = Jwts.builder().setHeader(headerMap)
-                .setClaims(map)
-                .setExpiration(DateUtils.addDays(new Date(), 7))
-                .signWith(signingKey, SignatureAlgorithm.HS256);
-
-        return builder.compact();
-    }
-
-    public String createExpireToken(Long memberId, String name, String email) {
-
-        SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
-        String key = secretKeyMaster;
-        //String role = "";
-
-        byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary(key);
-        Key signingKey = new SecretKeySpec(apiKeySecretBytes, signatureAlgorithm.getJcaName());
+        byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary(secretKeyMaster);
+        Key signingKey = new SecretKeySpec(apiKeySecretBytes, SIGNATURE_ALG.getJcaName());
 
         Map<String, Object> headerMap = new HashMap<>();
 
@@ -59,51 +36,43 @@ public class JwtTokenProvider {
 
         Map<String, String> map = new HashMap<>();
         map.put("id", String.valueOf(memberId));
-        map.put("name", name);
+        map.put("type", type);
         map.put("email", email);
 
         JwtBuilder builder = Jwts.builder().setHeader(headerMap)
                 .setClaims(map)
-                .setExpiration(new Date())
-                .signWith(signingKey, SignatureAlgorithm.HS256);
+                .setExpiration(DateUtils.addDays(new Date(), expire))
+                .signWith(signingKey, SIGNATURE_ALG);
 
         return builder.compact();
     }
 
-    public String createAuthToken() {
-
-        SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
-        String key = secretKeyMaster;
-        //String role = "";
-
-        byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary(key);
-        Key signingKey = new SecretKeySpec(apiKeySecretBytes, signatureAlgorithm.getJcaName());
-
-        Map<String, Object> headerMap = new HashMap<>();
-
-        headerMap.put("typ", "JWT");
-        headerMap.put("alg", "HS256");
-
-        JwtBuilder builder = Jwts.builder().setHeader(headerMap)
-                .setExpiration(DateUtils.addMinutes(new Date(), 3))
-                .signWith(signingKey, SignatureAlgorithm.HS256);
-
-        return builder.compact();
-
-    }
-
-    public String getSubject(String token) {
-        String key = secretKeyMaster;
-        return Jwts.parserBuilder().setSigningKey(key)
+    public String getEmail(String token) {
+        return Jwts.parserBuilder().setSigningKey(secretKeyMaster)
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
-                .getSubject();
+                .get("email",String.class);
+    }
+
+    public String getType(String token) {
+        return Jwts.parserBuilder().setSigningKey(secretKeyMaster)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("type", String.class);
+    }
+
+    public Long getMemberId(String token) {
+        return Jwts.parserBuilder().setSigningKey(secretKeyMaster)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("id", Long.class);
     }
 
     public Map<String, String> getClaims(String token) {
-        String key = secretKeyMaster;
-        Claims claims = Jwts.parserBuilder().setSigningKey(key)
+        Claims claims = Jwts.parserBuilder().setSigningKey(secretKeyMaster)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -122,10 +91,34 @@ public class JwtTokenProvider {
                     .build()
                     .parseClaimsJws(token);
             return !claims.getBody().getExpiration().before(new Date());
+        } catch (ExpiredJwtException e){
+            log.error("Token("+ token+ ") Expired");
+            return false;
         } catch (JwtException | IllegalArgumentException e) {
+            log.error("Token("+ token+ ") Wrong");
             return false;
         }
     }
 
+    public String getTokenByHeader(HttpServletRequest request) {
+        String authorizationToken = request.getHeader(AUTHORIZATION);
+        if (null != authorizationToken && authorizationToken.startsWith(AUTHORIZATION_TYPE)) {
+            return authorizationToken.replace(AUTHORIZATION_TYPE, "").trim();
+        }
+        return "";
+    }
 
+    public Long getMemberIdByClaims(HttpServletRequest request) {
+        String token = getTokenByHeader(request);
+        if(token.equals(""))
+            return -1L;
+        return getMemberId(token);
+    }
+
+    public String getEmailByClaims(HttpServletRequest request) {
+        String token = getTokenByHeader(request);
+        if(token.equals(""))
+            return "";
+        return getEmail(token);
+    }
 }

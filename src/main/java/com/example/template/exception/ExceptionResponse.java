@@ -1,6 +1,6 @@
 package com.example.template.exception;
 
-import com.example.template.utils.UtcZoneDateTimeSerializer;
+import com.example.template.utils.serializer.UtcZoneDateTimeSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Builder;
 import lombok.Getter;

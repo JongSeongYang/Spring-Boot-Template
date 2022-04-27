@@ -1,10 +1,13 @@
 package com.example.template.utils.interceptor;
 
+import com.example.template.exception.CustomResponseStatusException;
+import com.example.template.exception.ExceptionCode;
 import com.example.template.utils.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -29,13 +32,16 @@ public class UserAuthInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         System.out.println(">>> UserAuthInterceptor.preHandle 호출");
         String token = extract(request, "Bearer");
+        if (HttpMethod.OPTIONS.matches(request.getMethod())) {
+            return true;
+        }
         // 토큰이 없을 경우
         if (StringUtils.isEmpty(token)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "권한이 없습니다.");
+            throw new CustomResponseStatusException(ExceptionCode.UNAUTHORIZED, "");
         }
 
         if (!jwtTokenProvider.validateToken(token)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다.");
+            throw new CustomResponseStatusException(ExceptionCode.INVALID_TOKEN, "");
         }
 
         Map<String, String> map = jwtTokenProvider.getClaims(token);
@@ -54,7 +60,6 @@ public class UserAuthInterceptor implements HandlerInterceptor {
                 return value.substring(type.length()).trim();
             }
         }
-        
         return "";
     }
 

@@ -2,11 +2,13 @@ package com.example.template.utils;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 
-public class EncUtils {
+@Component
+public class HashUtils {
 
     public static byte[] computeHash(byte[] s) {
         String messageDigest = "SHA-256";
@@ -35,7 +37,7 @@ public class EncUtils {
         return ret;
     }
 
-    public static String toPasswordHash(String password) {
+    public String toPasswordHash(String password) {
 
         return toHash(password);
     }

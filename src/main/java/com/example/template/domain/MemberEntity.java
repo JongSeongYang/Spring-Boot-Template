@@ -22,13 +22,13 @@ public class MemberEntity extends BaseTimeEntity{
   private String type;
   private String deviceToken;
   private String password;
+  private String transferPassword;
   private String phone;
-  private String name;
   private String email;
-  private Integer status;
+  private String rewardCode;
+  private Integer status; // 0 : 정상, 1 : 정지, 2: 잠김(비밀번호 잘못 입력 5회 이상)
   private Integer passwordFailCnt;
-  private LocalDateTime passwordUpdatedTime;
-  private LocalDateTime lastChallengeTime;
+  private Integer transferPasswordFailCnt;
   private LocalDateTime deletedTime;
 }
 
